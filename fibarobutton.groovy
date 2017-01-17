@@ -15,35 +15,35 @@
  *  Author: AdamV
  *  Date: 2016-09-10
  *
- * 
+ *
  */
- 
+
 metadata {
 	definition (name: "Fibaro Button", namespace: "Fibaro", author: "AdamV") {
 		capability "Actuator"
 		capability "Button"
         capability "Battery"
-		capability "Configuration" 
+		capability "Configuration"
        	capability "Refresh"
-        
+
         command "describeAttributes"
-        
+
 		attribute "numberOfButtons", "number"
         attribute "buttonClicks", "enum", ["one click", "two clicks", "three clicks", "four clicks", "five clicks", "hold start", "hold release"]
         attribute "holdLevel", "number"
 
 		fingerprint deviceId: "0x1801", inClusters: "0x5E, 0x86, 0x72, 0x5B, 0x5A, 0x59, 0x85, 0x73, 0x84, 0x80, 0x71, 0x56, 0x70, 0x8E, 0x7A, 0x98", outClusters: "0x26, 0x9C"
-							
+
    }
 
 	simulator {
 		status "button 1 pushed":  "command: 9881, payload: 00 5B 03 DE 00 01"
-		
+
         // need to redo simulator commands
 
 	}
 	tiles (scale: 2){
-		
+
         multiAttributeTile(name:"button", type:"generic", width:6, height:4) {
   			tileAttribute("device.button", key: "PRIMARY_CONTROL"){
     		attributeState "default", label:'Fibaro Button', backgroundColor:"#44b621", icon:"st.Home.home30"
@@ -52,12 +52,12 @@ metadata {
             tileAttribute ("device.battery", key: "SECONDARY_CONTROL") {
 			attributeState "battery", label:'${currentValue} % battery'
             }
-            
+
         }
 		//standardTile("button", "device.button", width: 6, height: 4) {
 		//	state "default", label: "", icon: "st.Home.home30", backgroundColor: "#ffffff"
         //    state "held", label: "holding", icon: "st.Home.home30", backgroundColor: "#C390D4"
-       // } 
+       // }
     	//valueTile("battery", "device.battery", width: 3, height: 2, inactiveLabel: false, decoration: "flat") {
          //tileAttribute ("device.battery", key: "PRIMARY_CONTROL"){
           // state "battery", label:'${currentValue}% battery', unit:""
@@ -66,7 +66,7 @@ metadata {
         valueTile("configure", "device.button", width: 2, height: 2, decoration: "flat") {
 			state "default", label: "configure", backgroundColor: "#ffffff", action: "configure", icon:"st.secondary.configure"
         }
-        
+
         main "button"
 		details(["button", "configure"])
 	}
@@ -79,9 +79,9 @@ def parse(String description) {
   //  log.debug("RAW command: $description")
 	if (description.startsWith("Err")) {
 		log.debug("An error has occurred")
-		} 
+		}
     else {
-       
+
        	def cmd = zwave.parse(description.replace("98C1", "9881")/*, [0x98: 1, 0x20: 1, 0x84: 1, 0x80: 1, 0x60: 3, 0x2B: 1, 0x26: 1]*/)
      //    log.debug "Parsed Command: $cmd"
         if (cmd) {
@@ -94,14 +94,14 @@ def parse(String description) {
   		}
     }
 }
-  
+
 def describeAttributes(payload) {
     	payload.attributes = [
         [ name: "holdLevel",    type: "number",    range:"1..100", capability: "button" ],
        	[ name: "buttonClicks",    type: "enum",    options: ["one click", "two clicks", "three clicks", "four clicks", "five clicks", "hold start", "hold release"], momentary: true, capability: "button" ],
     	]
     	return null
-		}		  
+		}
 
 def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityMessageEncapsulation cmd) {
         def encapsulatedCommand = cmd.encapsulatedCommand()
@@ -116,14 +116,14 @@ def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityMessageEncapsulat
 def zwaveEvent(physicalgraph.zwave.commands.wakeupv2.WakeUpNotification cmd) {
 	[ createEvent(descriptionText: "${device.displayName} woke up"),
 	  response(zwave.wakeUpV2.wakeUpNoMoreInformation()) ]
-      
+
       log.debug("Button Woke Up!")
 }
 
 /*def zwaveEvent(physicalgraph.zwave.commands.wakeupv1.WakeUpNotification cmd) {
 	[ createEvent(descriptionText: "${device.displayName} woke up"),
 	  response(zwave.wakeUpV1.wakeUpNoMoreInformation()) ]
-      
+
       log.debug("Button Woke Up!")
       log.debug("wakeup v1 payload: $cmd.payload")
 }
@@ -153,7 +153,7 @@ def zwaveEvent(physicalgraph.zwave.commands.centralscenev1.CentralSceneNotificat
     //    log.debug( "sceneNumber: $cmd.sceneNumber")
     //    log.debug( "sequenceNumber: $cmd.sequenceNumber")
       // 	log.debug( "payload: $cmd.payload")
-      	
+
         if ( cmd.keyAttributes == 0 ) {
         	Integer button = 1
             sendEvent(name: "buttonClicks", value: "one click", descriptionText: "$device.displayName button was clicked once", isStateChange: true)
@@ -186,9 +186,9 @@ def zwaveEvent(physicalgraph.zwave.commands.centralscenev1.CentralSceneNotificat
             }
 	    if ( cmd.keyAttributes == 2 ) {
         	Integer button = 1
-            sendEvent(name: "button", value: "held", descriptionText: "$device.displayName button $button was held", isStateChange: true)
+            sendEvent(name: "button", value: "held", data: [buttonNumber: 1], descriptionText: "$device.displayName button $button was held", isStateChange: true)
             sendEvent(name: "buttonClicks", value: "hold start", data: [buttonClicks: "hold start"], descriptionText: "$device.displayName button is holdStart", isStateChange: true)
-            sendEvent(name: "button", value: "level", data: [cmd.sequenceNumber], descriptionText: "$device.displayName level is $cmd.sequenceNumber", isStateChange: true)
+            sendEvent(name: "button", value: "level", data: [buttonNumber: 1, cmd.sequenceNumber], descriptionText: "$device.displayName level is $cmd.sequenceNumber", isStateChange: true)
         	log.debug( "Button held" )
             log.debug( "Button level: $cmd.sequenceNumber" )
             }
@@ -196,7 +196,7 @@ def zwaveEvent(physicalgraph.zwave.commands.centralscenev1.CentralSceneNotificat
             sendEvent(name: "buttonClicks", value: "hold release", descriptionText: "$device.displayName button is released", isStateChange: true)
         	log.debug( "Button released" )
             }
-      
+
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv1.SwitchMultilevelGet cmd) {
@@ -246,7 +246,7 @@ def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv3.SwitchMultilevelS
        // log.debug "Switch Start Leve Change startLevel: $cmd.startLevel"
        // log.debug "Switch Start Leve Change stepSize: $cmd.stepSize"
        // log.debug "Switch Start Leve Change upDown: $cmd.upDown"
-        
+
       //  Integer button = 1
       //  sendEvent(name: "button", value: "held", data: [buttonNumber: button], descriptionText: "Button $button is held", isStateChange: true)
       //  log.debug( "Button Hold start" )
@@ -271,8 +271,8 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
 
 
   def configure() {
-    
- 
+
+
     def commands = [ ]
 			log.debug "Resetting Sensor Parameters to SmartThings Compatible Defaults"
 	def cmds = []
@@ -283,9 +283,9 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
 	cmds << zwave.configurationV2.configurationSet(configurationValue: [127], parameterNumber: 1, size: 1).format()
     cmds << zwave.configurationV2.configurationSet(configurationValue: [7], parameterNumber: 3, size: 1).format()
     cmds << zwave.configurationV2.configurationSet(configurationValue: [16], parameterNumber: 30, size: 1).format()
-    cmds << zwave.configurationV2.configurationGet(parameterNumber: 1).format()  
+    cmds << zwave.configurationV2.configurationGet(parameterNumber: 1).format()
 
-    
+
     delayBetween(cmds, 500)
 }
-       
+
