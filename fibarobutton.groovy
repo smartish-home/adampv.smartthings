@@ -188,7 +188,7 @@ def zwaveEvent(physicalgraph.zwave.commands.centralscenev1.CentralSceneNotificat
         	Integer button = 1
             sendEvent(name: "button", value: "held", data: [buttonNumber: 1], descriptionText: "$device.displayName button $button was held", isStateChange: true)
             sendEvent(name: "buttonClicks", value: "hold start", data: [buttonClicks: "hold start"], descriptionText: "$device.displayName button is holdStart", isStateChange: true)
-            sendEvent(name: "button", value: "level", data: [buttonNumber: 1, cmd.sequenceNumber], descriptionText: "$device.displayName level is $cmd.sequenceNumber", isStateChange: true)
+            //sendEvent(name: "button", value: "level", data: [cmd.sequenceNumber], descriptionText: "$device.displayName level is $cmd.sequenceNumber", isStateChange: true)
         	log.debug( "Button held" )
             log.debug( "Button level: $cmd.sequenceNumber" )
             }
